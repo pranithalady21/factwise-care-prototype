@@ -4,6 +4,7 @@
   const CAPACITY = 74;
   const FEVER_C = 38.0; // Demonstration default. The facility's clinical lead must configure its actual threshold.
   const roleList = ['Nurse', 'Doctor', 'Admin'];
+  const canViewOutcomes = () => state.role === 'Doctor' || state.role === 'Admin';
   let view = 'overview';
   let activeFilter = 'all';
   let toastTimer;
@@ -187,7 +188,7 @@
       <div class="content-grid"><section class="panel table-panel"><div class="panel-header"><div><h2>${tableTitle}</h2><p>${tableSub}</p></div><button class="text-link" data-action="navigate" data-view="${state.role === 'Admin' ? 'discharges' : 'patients'}">View all →</button></div>${patientTable(list)}</section>
         <div class="side-stack"><section class="panel"><div class="panel-header"><div><h2>${summaryTitle}</h2><p>Role-specific next steps</p></div></div><div class="panel-body"><div class="callout ${state.role === 'Admin' ? 'green' : 'teal'}"><span class="callout-icon">${state.role === 'Admin' ? '✓' : 'i'}</span><span>${escapeHtml(summaryText)}</span></div><div style="margin-top:12px"><button class="btn btn-secondary" data-action="${buttonAction === 'record-temp' ? 'choose-patient-temp' : 'navigate'}" ${buttonAction !== 'record-temp' ? `data-view="${buttonAction}"` : ''}>${buttonText}</button></div></div></section>
           <section class="panel"><div class="panel-header"><div><h2>Daily completion</h2><p>Today's service coverage</p></div></div><div class="panel-body"><div class="progress-row"><div class="progress-meta"><span>Temperature checks</span><b>${m.checked}/${m.occupied}</b></div><div class="progress-track"><div class="progress-fill" style="width:${checkedPct}%"></div></div><div class="progress-foot">One nurse reading per active patient each day</div></div><div class="progress-row" style="margin-bottom:0"><div class="progress-meta"><span>Doctor visits</span><b>${m.visited}/${m.occupied}</b></div><div class="progress-track"><div class="progress-fill amber" style="width:${visitedPct}%"></div></div><div class="progress-foot">Visit logging unlocks after today's temperature</div></div></div></section>
-          <section class="panel"><div class="panel-header"><div><h2>Outcome benchmark</h2><p>Closed cases in demo cohort</p></div><button class="text-link" data-action="navigate" data-view="outcomes">Details →</button></div><div class="panel-body"><div class="mini-stat"><span>Success target</span><b>85% <span class="muted">· ${state.outcomes.recovered} recovered</span></b></div><div class="mini-stat"><span>Mortality limit</span><b>15% <span class="muted">· ${state.outcomes.deceased} deaths</span></b></div></div></section>
+          ${canViewOutcomes() ? `<section class="panel"><div class="panel-header"><div><h2>Outcome benchmark</h2><p>Closed cases in demo cohort</p></div><button class="text-link" data-action="navigate" data-view="outcomes">Details →</button></div><div class="panel-body"><div class="mini-stat"><span>Success target</span><b>85% <span class="muted">· ${state.outcomes.recovered} recovered</span></b></div><div class="mini-stat"><span>Mortality limit</span><b>15% <span class="muted">· ${state.outcomes.deceased} deaths</span></b></div></div></section>` : ''}
         </div>
       </div>`;
   }
@@ -227,12 +228,21 @@
     $('#profileRole').textContent = state.role;
     $('#patientNavCount').textContent = activePatients().length;
     $('#dischargeNavCount').textContent = activePatients().filter(dischargeEligible).length;
+    const outcomesNav = $('.nav-item[data-view="outcomes"]');
+    if (outcomesNav) outcomesNav.hidden = !canViewOutcomes();
+    if (!canViewOutcomes() && view === 'outcomes') view = 'overview';
     setPageTitle();
     const content = $('#appContent');
     content.innerHTML = view === 'patients' ? patientsPage() : view === 'discharges' ? dischargePage() : view === 'outcomes' ? outcomesPage() : overviewPage();
   }
   function navigate(nextView) {
     if (!['overview', 'patients', 'discharges', 'outcomes'].includes(nextView)) return;
+    if (nextView === 'outcomes' && !canViewOutcomes()) {
+      view = 'overview';
+      render();
+      showToast('Outcomes are available to Doctor and Admin roles only.');
+      return;
+    }
     view = nextView;
     $('#sidebar').classList.remove('open');
     render();
@@ -410,6 +420,7 @@
   $('#roleSwitcher').addEventListener('change', event => {
     if (!roleList.includes(event.target.value)) return;
     state.role = event.target.value;
+    if (!canViewOutcomes() && view === 'outcomes') view = 'overview';
     saveState();
     render();
   });
