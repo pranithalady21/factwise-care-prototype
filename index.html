@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17313a">
+  <title>WardFlow | Quarantine care workspace</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="WardFlow home" data-view="overview">
+        <span class="brand-mark" aria-hidden="true">W</span>
+        <span><strong>WardFlow</strong><small>Quarantine care workspace</small></span>
+      </a>
+      <div class="topbar-actions">
+        <div class="demo-badge"><span class="live-dot"></span> Demo workspace</div>
+        <label class="role-picker">View as
+          <select id="roleSelect" aria-label="Choose a demo role">
+            <option>Nurse</option>
+            <option>Doctor</option>
+            <option>Admin</option>
+          </select>
+        </label>
+        <button class="button button-primary top-action" id="newAdmissionButton" type="button">+ New admission</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="sidebar-label">WORKSPACE</div>
+        <button class="nav-item is-active" data-view="overview" type="button"><span class="nav-icon">▦</span>Overview</button>
+        <button class="nav-item" data-view="patients" type="button"><span class="nav-icon">♙</span>Patient roster</button>
+        <button class="nav-item" data-view="outcomes" type="button"><span class="nav-icon">◷</span>Outcome quality</button>
+        <div class="sidebar-bottom">
+          <div class="sidebar-note"><span class="note-icon">i</span><span>Prototype data stays in this browser. Do not enter real patient information.</span></div>
+          <button class="text-button" id="resetDemoButton" type="button">Reset demo data</button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <div class="content-meta"><span id="todayLabel"></span><span class="meta-divider">/</span><span>Care unit · 74 beds</span></div>
+        <div id="viewRoot" aria-live="polite"></div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="modal" id="temperatureDialog">
+    <form id="temperatureForm" method="dialog">
+      <div class="modal-heading"><div><span class="eyebrow">NURSING TASK</span><h2>Record temperature</h2></div><button class="icon-button" type="button" data-close="temperatureDialog" aria-label="Close">×</button></div>
+      <p class="modal-copy" id="temperaturePatientLabel"></p>
+      <label class="field-label" for="temperatureValue">Temperature</label>
+      <div class="input-with-unit"><input id="temperatureValue" name="temperature" type="number" min="30" max="45" step="0.1" inputmode="decimal" placeholder="e.g. 37.2" required><span>°C</span></div>
+      <label class="field-label" for="feverStatus">Fever status <span class="required-mark">Required</span></label>
+      <select id="feverStatus" name="feverStatus" required>
+        <option value="">Choose the facility assessment</option>
+        <option value="no">No fever</option>
+        <option value="yes">Fever present</option>
+      </select>
+      <div class="field-group hidden" id="recheckReasonGroup"><label class="field-label" for="recheckReason">Reason for another reading</label><input id="recheckReason" name="recheckReason" maxlength="180" placeholder="For example, requested recheck"></div>
+      <div class="field-group"><label class="field-label" for="temperatureNote">Note <span class="optional-mark">Optional</span></label><textarea id="temperatureNote" name="note" rows="2" maxlength="240" placeholder="Add a short observation"></textarea></div>
+      <div class="modal-footer"><button class="button button-quiet" type="button" data-close="temperatureDialog">Cancel</button><button class="button button-primary" type="submit">Save reading</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="visitDialog">
+    <form id="visitForm" method="dialog">
+      <div class="modal-heading"><div><span class="eyebrow">DOCTOR ROUND</span><h2>Complete daily review</h2></div><button class="icon-button" type="button" data-close="visitDialog" aria-label="Close">×</button></div>
+      <p class="modal-copy" id="visitPatientLabel"></p>
+      <div class="inline-warning hidden" id="emergencyNotice">Today's temperature has not been recorded. Use this only for an urgent review; the missing nurse task will remain visible.</div>
+      <div class="field-group"><label class="field-label" for="treatmentPlan">Treatment decision / plan</label><textarea id="treatmentPlan" name="treatmentPlan" rows="3" maxlength="500" placeholder="Record the doctor's decision for this visit" required></textarea></div>
+      <div class="field-group"><label class="field-label" for="doctorNote">Clinical note <span class="optional-mark">Optional</span></label><textarea id="doctorNote" name="doctorNote" rows="2" maxlength="400" placeholder="A concise note for the patient record"></textarea></div>
+      <div class="field-group hidden" id="emergencyReasonGroup"><label class="field-label" for="emergencyReason">Reason for urgent override</label><input id="emergencyReason" name="emergencyReason" maxlength="180" placeholder="Required for the audit trail"></div>
+      <div class="modal-footer"><button class="button button-quiet" type="button" data-close="visitDialog">Cancel</button><button class="button button-primary" type="submit">Save doctor review</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="admissionDialog">
+    <form id="admissionForm" method="dialog">
+      <div class="modal-heading"><div><span class="eyebrow">ADMINISTRATION</span><h2>Admit a patient</h2></div><button class="icon-button" type="button" data-close="admissionDialog" aria-label="Close">×</button></div>
+      <p class="modal-copy" id="admissionCapacityNote"></p>
+      <div class="field-group"><label class="field-label" for="newPatientName">Patient name</label><input id="newPatientName" name="patientName" maxlength="80" autocomplete="off" required></div>
+      <div class="field-group"><label class="field-label" for="newRoom">Room / bed</label><input id="newRoom" name="room" maxlength="20" placeholder="Leave blank to assign the next bed"></div>
+      <div class="modal-footer"><button class="button button-quiet" type="button" data-close="admissionDialog">Cancel</button><button class="button button-primary" type="submit">Confirm admission</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="deathDialog">
+    <form id="deathForm" method="dialog">
+      <div class="modal-heading"><div><span class="eyebrow">DOCTOR · FINAL OUTCOME</span><h2>Record a death outcome</h2></div><button class="icon-button" type="button" data-close="deathDialog" aria-label="Close">×</button></div>
+      <p class="modal-copy" id="deathPatientLabel"></p>
+      <div class="inline-warning">This closes the active case and updates the demo mortality rate. Use synthetic data only.</div>
+      <div class="field-group"><label class="field-label" for="deathNote">Record note</label><textarea id="deathNote" name="note" rows="3" maxlength="400" placeholder="Add a brief record note" required></textarea></div>
+      <div class="modal-footer"><button class="button button-quiet" type="button" data-close="deathDialog">Cancel</button><button class="button button-danger" type="submit">Save final outcome</button></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
